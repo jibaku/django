@@ -153,7 +153,7 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
             # extra HTML -- the "add other" interface -- to the end of the
             # rendered output. formfield can be None if it came from a
             # OneToOneField with parent_link=True or a M2M intermediary.
-            if formfield and db_field.name not in self.raw_id_fields:
+            if formfield and db_field.name not in self.get_raw_id_fields(request):
                 related_modeladmin = self.admin_site._registry.get(db_field.remote_field.model)
                 wrapper_kwargs = {}
                 if related_modeladmin:
@@ -214,7 +214,7 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
         Get a form Field for a ForeignKey.
         """
         db = kwargs.get('using')
-        if db_field.name in self.raw_id_fields:
+        if db_field.name in self.get_raw_id_fields(request):
             kwargs['widget'] = widgets.ForeignKeyRawIdWidget(db_field.remote_field, self.admin_site, using=db)
         elif db_field.name in self.radio_fields:
             kwargs['widget'] = widgets.AdminRadioSelect(attrs={
@@ -239,7 +239,7 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
             return None
         db = kwargs.get('using')
 
-        if db_field.name in self.raw_id_fields:
+        if db_field.name in self.get_raw_id_fields(request):
             kwargs['widget'] = widgets.ManyToManyRawIdWidget(db_field.remote_field, self.admin_site, using=db)
         elif db_field.name in (list(self.filter_vertical) + list(self.filter_horizontal)):
             kwargs['widget'] = widgets.FilteredSelectMultiple(
@@ -306,6 +306,12 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
         Hook for specifying field ordering.
         """
         return self.ordering or ()  # otherwise we might try to *None, which is bad ;)
+
+    def get_raw_id_fields(self, request):
+        """
+        Hook for specifying custom raw id fields.
+        """
+        return self.raw_id_fields
 
     def get_readonly_fields(self, request, obj=None):
         """
